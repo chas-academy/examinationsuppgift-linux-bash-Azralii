@@ -3,9 +3,10 @@
 # ==========================================
 # Script: create_users.sh
 # Beskrivning:
-# Skapar användare utifrån argument som skickas in,
-# skapar kataloger i hemkatalogen och en personlig
-# welcome.txt med information om andra användare.
+# Skapar användare från argument på kommandoraden,
+# skapar katalogerna Documents, Downloads och Work
+# i varje användares hemkatalog samt en personlig
+# welcome.txt.
 # Endast root får köra scriptet.
 # ==========================================
 
@@ -15,58 +16,48 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Kontrollera att minst ett användarnamn har skickats in
+# Kontrollera att minst en användare skickats in
 if [ "$#" -eq 0 ]; then
-    echo "Användning: $0 användare1 användare2 användare3"
+    echo "Användning: $0 användare1 användare2 ..."
     exit 1
 fi
 
-# Loopa igenom alla användarnamn som skickats in
+# Loopa igenom alla användarnamn
 for username in "$@"; do
-
-    # Kontrollera om användaren redan finns
-    if id "$username" >/dev/null 2>&1; then
-        echo "Användaren $username finns redan. Hoppar över."
-        continue
+    # Skapa användaren bara om den inte redan finns
+    if ! id "$username" >/dev/null 2>&1; then
+        useradd -m "$username"
+        if [ $? -ne 0 ]; then
+            echo "Fel: Kunde inte skapa användaren $username"
+            continue
+        fi
     fi
 
-    # Hämta lista på befintliga användare innan ny användare skapas
-    existing_users=$(cut -d: -f1 /etc/passwd)
+    # Hämta hemkatalogen från systemet istället för att hårdkoda /home/användare
+    home_dir=$(getent passwd "$username" | cut -d: -f6)
 
-    # Skapa användaren med hemkatalog
-    useradd -m "$username"
-
-    # Kontrollera att användaren skapades korrekt
-    if [ $? -ne 0 ]; then
-        echo "Fel: Kunde inte skapa användaren $username."
+    # Om hemkatalogen inte kunde hämtas, hoppa över användaren
+    if [ -z "$home_dir" ]; then
+        echo "Fel: Kunde inte hitta hemkatalog för $username"
         continue
     fi
-
-    # Sätt hemkatalog-variabel
-    home_dir="/home/$username"
 
     # Skapa undermappar
     mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
 
+    # Sätt rätt ägare på mapparna
+    chown "$username:$username" "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+
+    # Endast ägaren får läsa/skriva/öppna mapparna
+    chmod 700 "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+
     # Skapa welcome.txt
     {
         echo "Välkommen $username"
-        echo "Andra användare som redan finns i systemet:"
-        for user in $existing_users; do
-            echo "$user"
-        done
+        grep -v "^$username:" /etc/passwd | cut -d: -f1
     } > "$home_dir/welcome.txt"
 
-    # Sätt ägare på filer och mappar
-    chown -R "$username:$username" "$home_dir"
-
-    # Sätt rättigheter:
-    # Endast ägaren får läsa, skriva och gå in i mapparna
-    chmod 700 "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
-
-    # welcome.txt: endast ägaren får läsa och skriva
+    # Sätt rätt ägare och rättigheter på welcome.txt
+    chown "$username:$username" "$home_dir/welcome.txt"
     chmod 600 "$home_dir/welcome.txt"
-
-    echo "Användaren $username skapades korrekt."
-
 done
