@@ -1,36 +1,72 @@
+​
 #!/bin/bash
-# Kontrollera att scriptet körs som root
+
+# =========================
+# 1. Root-kontroll
+# =========================
 if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root"
     exit 1
 fi
 
-# Kontrollera att minst en användare skickats in
-if [ $# -eq 0 ]; then
+# =========================
+# 2. Kontroll: minst 1 argument
+# =========================
+if [ "$#" -eq 0 ]; then
+    echo "Usage: $0 username1 username2 ..."
     exit 1
 fi
 
-# Skapa användare från argument
+# =========================
+# 3. Loop genom användare
+# =========================
 for username in "$@"; do
-    useradd -m -U "$username" 2>/dev/null
+
+    # =========================
+    # Skapa användare (om ej finns)
+    # =========================
+    if id "$username" &>/dev/null; then
+        echo "User $username already exists"
+    else
+        useradd -m "$username"
+        echo "Created user: $username"
+    fi
 
     home_dir="/home/$username"
 
-    # Skapa kataloger
-    mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+    # =========================
+    # 4. Skapa kataloger (EXAKT lowercase)
+    # =========================
+    mkdir -p "$home_dir/documents" \
+             "$home_dir/downloads" \
+             "$home_dir/work"
 
-    # Sätt ägarskap
+    # =========================
+    # 5. Sätt ägare
+    # =========================
     chown -R "$username:$username" "$home_dir"
 
-    # Sätt rättigheter
-    chmod 700 "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+    # =========================
+    # 6. Rättigheter (viktigt!)
+    # =========================
+    chmod 700 "$home_dir"
+    chmod 700 "$home_dir/documents" \
+              "$home_dir/downloads" \
+              "$home_dir/work"
 
-    # Skapa welcome.txt
-    echo "Välkommen $username" > "$home_dir/welcome.txt"
-    awk -F: -v current="$username" '$1 != current { print $1 }' /etc/passwd >> "$home_dir/welcome.txt"
+    # =========================
+    # 7. Skapa welcome.txt
+    # =========================
+    {
+        echo "Välkommen $username"
+        awk -F: -v current="$username" '$1 != current { print $1 }' /etc/passwd
+    } > "$home_dir/welcome.txt"
 
-    # Sätt ägare och rättigheter på welcome.txt
+    # =========================
+    # 8. Rättigheter på fil
+    # =========================
     chown "$username:$username" "$home_dir/welcome.txt"
     chmod 600 "$home_dir/welcome.txt"
+
 done
 
