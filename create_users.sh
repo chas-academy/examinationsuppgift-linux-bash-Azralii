@@ -42,5 +42,5 @@ for username in "$@"; do
 
     # Sätt rätt ägare på filen
     chown "$username:$username" "$home_dir/welcome.txt"
-    chmod 644 "$home_dir/welcome.txt"
+    chmod 600 "$home_dir/welcome.txt"
 done
