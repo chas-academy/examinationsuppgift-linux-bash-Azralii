@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # Kontrollera att scriptet körs som root
 if [ "$EUID" -ne 0 ]; then
@@ -21,7 +20,7 @@ for username in "$@"; do
     chmod 700 "/home/$username/Work"
 
     echo "Välkommen $username" > "/home/$username/welcome.txt"
-    awk -F: '{print $1}' /etc/passwd >> "/home/$username/welcome.txt"
+    awk -F: -v user="$username" '$1 != user {print $1}' /etc/passwd >> "/home/$username/welcome.txt"
 
     chown "$username:$username" "/home/$username/welcome.txt"
     chmod 600 "/home/$username/welcome.txt"
