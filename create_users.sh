@@ -1,33 +1,38 @@
 #!/bin/bash
 
-# Kontrollera att scriptet körs som root
+# Kontrollera root
 if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root"
     exit 1
 fi
 
-# Skapa alla användare som skickas in som argument
+# Loop genom alla användare
 for username in "$@"; do
+
+    # Skapa användare + hemkatalog
     useradd -m "$username"
 
     home_dir="/home/$username"
 
-    # Skapa kataloger
-    mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+    # Skapa mappar
+    mkdir "$home_dir/Documents"
+    mkdir "$home_dir/Downloads"
+    mkdir "$home_dir/Work"
 
-    # Sätt ägare
+    # Ägarskap
     chown -R "$username:$username" "$home_dir"
 
-    # Sätt rättigheter så bara ägaren kommer åt mapparna
-    chmod 700 "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+    # Rättigheter (endast ägare)
+    chmod 700 "$home_dir/Documents"
+    chmod 700 "$home_dir/Downloads"
+    chmod 700 "$home_dir/Work"
 
-    # Skapa welcome.txt
-    {
-        echo "Välkommen $username"
-        awk -F: -v current="$username" '$1 != current { print $1 }' /etc/passwd
-    } > "$home_dir/welcome.txt"
+    # welcome.txt (EXAKT format viktigt!)
+    echo "Välkommen $username" > "$home_dir/welcome.txt"
+    awk -F: '{print $1}' /etc/passwd >> "$home_dir/welcome.txt"
 
-    # Sätt rätt ägare och rättigheter på filen
+    # Rättigheter på fil
     chown "$username:$username" "$home_dir/welcome.txt"
     chmod 600 "$home_dir/welcome.txt"
+
 done
