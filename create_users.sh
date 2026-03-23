@@ -1,29 +1,5 @@
 #!/bin/bash
 
-# Kontrollera att scriptet körs som root
-if [ "$EUID" -ne 0 ]; then
-    echo "Fel: Scriptet måste köras som root."
-    exit 1
-fi
-
-# Kontrollera att minst en användare skickats in
-if [ "$#" -lt 1 ]; then
-    echo "Användning: $0 användare1 användare2 ..."
-    exit 1
-fi
-
-# Spara användare som fanns innan scriptet startade
-existing_users=$(getent passwd | cut -d: -f1)
-
-# Loopa igenom alla användare
-for username in "$@"; do
-    # Skapa användaren om den inte redan finns
-    if ! id "$username" >/dev/null 2>&1; then
-        useradd -m -U -s /bin/bash "$username" || {
-            echo "Fel: Kunde inte skapa användaren $username"
-            continue
-       #!/bin/bash
-
 # Root-kontroll
 if [ "$EUID" -ne 0 ]; then
     echo "Fel: Scriptet måste köras som root."
@@ -36,11 +12,10 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-# Spara befintliga användare (innan nya skapas)
+# Spara befintliga användare innan nya skapas
 existing_users=$(cut -d: -f1 /etc/passwd)
 
 for username in "$@"; do
-
     # Skapa användare om den inte finns
     if ! id "$username" >/dev/null 2>&1; then
         useradd -m "$username"
@@ -49,24 +24,23 @@ for username in "$@"; do
     # Hemkatalog
     home_dir="/home/$username"
 
-    # Skapa undermappar (EXAKTA namn!)
+    # Skapa undermappar
     mkdir -p "$home_dir/Documents"
     mkdir -p "$home_dir/Downloads"
     mkdir -p "$home_dir/Work"
 
-    # Rättigheter
+    # Sätt rättigheter
     chmod 700 "$home_dir/Documents"
     chmod 700 "$home_dir/Downloads"
     chmod 700 "$home_dir/Work"
 
-    # welcome.txt (EXAKT format viktigt)
+    # Skapa welcome.txt
     echo "Välkommen $username" > "$home_dir/welcome.txt"
     echo "$existing_users" >> "$home_dir/welcome.txt"
 
-    # Rättigheter på fil
+    # Sätt rättigheter på welcome.txt
     chmod 600 "$home_dir/welcome.txt"
 
-    # Ägarskap (kritisk fix!)
+    # Sätt ägarskap
     chown -R "$username" "$home_dir"
-
 done
