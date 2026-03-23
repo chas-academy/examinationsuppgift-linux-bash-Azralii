@@ -19,7 +19,7 @@ existing_users=$(getent passwd | cut -d: -f1)
 for username in "$@"; do
     # Skapa användaren om den inte redan finns
     if ! id "$username" >/dev/null 2>&1; then
-        useradd -m -s /bin/bash "$username" || {
+        useradd -m -U -s /bin/bash "$username" || {
             echo "Fel: Kunde inte skapa användaren $username"
             continue
         }
@@ -45,7 +45,7 @@ for username in "$@"; do
         echo "$existing_users"
     } > "$home_dir/welcome.txt"
 
-    # Sätt ägarskap
+    # Sätt ägarskap och filrättigheter
     chown -R "$username:$(id -gn "$username")" "$home_dir"
     chmod 600 "$home_dir/welcome.txt"
 done
