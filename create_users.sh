@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Kontrollera att scriptet körs som root
+# Script som skapar användare, hemkatalog, mappar och welcome.txt
+# Endast root får köra scriptet
+
 if [ "$EUID" -ne 0 ]; then
     echo "Fel: endast root får köra scriptet."
     exit 1
 fi
 
-# Skapa användare från argumenten
 for username in "$@"; do
     existing_users=$(cut -d: -f1 /etc/passwd)
 
