@@ -1,28 +1,59 @@
 #!/bin/bash
+
+# Avbryt vid fel
+set -e
+
 # Kontrollera att scriptet körs som root
 if [ "$EUID" -ne 0 ]; then
-    echo "This script must be run as root"
+    echo "Detta script måste köras som root."
     exit 1
 fi
 
-# Skapa användare från argument
-for username in "$@"; do
-    useradd -m "$username"
+# Kontrollera att ett användarnamn skickats in
+if [ -z "$1" ]; then
+    echo "Användning: $0 <användarnamn>"
+    exit 1
+fi
 
-    mkdir -p "/home/$username/Documents"
-    mkdir -p "/home/$username/Downloads"
-    mkdir -p "/home/$username/Work"
+USERNAME="$1"
+HOME_DIR="/home/$USERNAME"
+WELCOME_FILE="$HOME_DIR/valkommen.txt"
 
-    chown -R "$username:$username" "/home/$username"
+# Skapa användaren om den inte redan finns
+if id "$USERNAME" >/dev/null 2>&1; then
+    echo "Användaren $USERNAME finns redan."
+else
+    useradd -m "$USERNAME"
+    echo "Användaren $USERNAME skapades."
+fi
 
-    chmod 700 "/home/$username/Documents"
-    chmod 700 "/home/$username/Downloads"
-    chmod 700 "/home/$username/Work"
+# Skapa undermappar
+mkdir -p "$HOME_DIR/dokument"
+mkdir -p "$HOME_DIR/bilder"
+mkdir -p "$HOME_DIR/ovningar"
 
-    echo "Välkommen $username" > "/home/$username/welcome.txt"
-    awk -F: -v user="$username" '$1 != user {print $1}' /etc/passwd >> "/home/$username/welcome.txt"
+# Sätt ägarskap
+chown -R "$USERNAME:$USERNAME" "$HOME_DIR"
 
-    chown "$username:$username" "/home/$username/welcome.txt"
-    chmod 600 "/home/$username/welcome.txt"
-done
+# Sätt rättigheter: endast ägaren ska ha tillgång
+chmod 700 "$HOME_DIR/dokument"
+chmod 700 "$HOME_DIR/bilder"
+chmod 700 "$HOME_DIR/ovningar"
 
+# Skapa välkomstfil med innehåll
+cat > "$WELCOME_FILE" <<EOF
+Välkommen $USERNAME!
+
+Dina mappar har skapats:
+- dokument
+- bilder
+- ovningar
+
+Lycka till!
+EOF
+
+# Sätt rättigheter och ägare på filen
+chown "$USERNAME:$USERNAME" "$WELCOME_FILE"
+chmod 600 "$WELCOME_FILE"
+
+echo "Klart! Konto, mappar, rättigheter och välkomstfil är skapade."
