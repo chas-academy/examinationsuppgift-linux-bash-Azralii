@@ -1,41 +1,30 @@
 #!/bin/bash
 
-# Kontrollera root
+# Kontrollera att scriptet körs som root
 if [ "$EUID" -ne 0 ]; then
-    echo "Endast root!"
+    echo "Fel: endast root får köra scriptet."
     exit 1
 fi
 
-# Loop
+# Skapa användare från argumenten
 for username in "$@"; do
+    existing_users=$(cut -d: -f1 /etc/passwd)
 
-    # Spara befintliga användare
-    users=$(cut -d: -f1 /etc/passwd)
+    useradd -m "$username"
 
-    # Skapa användare
-    useradd -m -U "$username"
+    home_dir="/home/$username"
 
-    # Hämta hemkatalog
-    home=$(getent passwd "$username" | cut -d: -f6)
+    mkdir -p "$home_dir/Documents"
+    mkdir -p "$home_dir/Downloads"
+    mkdir -p "$home_dir/Work"
 
-    # Skapa mappar
-    mkdir "$home/Documents"
-    mkdir "$home/Downloads"
-    mkdir "$home/Work"
+    echo "Välkommen $username" > "$home_dir/welcome.txt"
+    echo "$existing_users" >> "$home_dir/welcome.txt"
 
-    # Sätt rättigheter
-    chmod 700 "$home/Documents"
-    chmod 700 "$home/Downloads"
-    chmod 700 "$home/Work"
+    chown -R "$username:$username" "$home_dir"
 
-    # welcome.txt
-    echo "Välkommen $username" > "$home/welcome.txt"
-    echo "$users" >> "$home/welcome.txt"
-
-    # ägare
-    chown -R "$username:$username" "$home"
-
-    # rättigheter fil
-    chmod 600 "$home/welcome.txt"
-
+    chmod 700 "$home_dir/Documents"
+    chmod 700 "$home_dir/Downloads"
+    chmod 700 "$home_dir/Work"
+    chmod 600 "$home_dir/welcome.txt"
 done
