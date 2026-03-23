@@ -28,16 +28,19 @@ for username in "$@"; do
     # Hämta hemkatalog
     home_dir=$(getent passwd "$username" | cut -d: -f6)
 
+    # Kontrollera att hemkatalog hittades
     if [ -z "$home_dir" ]; then
         echo "Fel: Kunde inte hitta hemkatalog för $username"
         continue
     fi
 
-    # Skapa mappar
+    # Skapa undermappar
     mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
 
-    # Sätt rättigheter
-    chmod 700 "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
+    # Sätt rättigheter på undermappar
+    chmod 700 "$home_dir/Documents"
+    chmod 700 "$home_dir/Downloads"
+    chmod 700 "$home_dir/Work"
 
     # Skapa welcome.txt
     {
@@ -45,7 +48,9 @@ for username in "$@"; do
         echo "$existing_users"
     } > "$home_dir/welcome.txt"
 
-    # Sätt ägarskap och filrättigheter
-    chown -R "$username:$(id -gn "$username")" "$home_dir"
+    # Sätt rättigheter på welcome.txt
     chmod 600 "$home_dir/welcome.txt"
+
+    # Sätt ägarskap på hela hemkatalogen
+    chown -R "$username:$(id -gn "$username")" "$home_dir"
 done
