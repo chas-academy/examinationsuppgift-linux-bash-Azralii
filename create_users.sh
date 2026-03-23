@@ -22,35 +22,51 @@ for username in "$@"; do
         useradd -m -U -s /bin/bash "$username" || {
             echo "Fel: Kunde inte skapa användaren $username"
             continue
-        }
+       #!/bin/bash
+
+# Root-kontroll
+if [ "$EUID" -ne 0 ]; then
+    echo "Fel: Scriptet måste köras som root."
+    exit 1
+fi
+
+# Minst en användare
+if [ "$#" -lt 1 ]; then
+    echo "Användning: $0 användare1 användare2 ..."
+    exit 1
+fi
+
+# Spara befintliga användare (innan nya skapas)
+existing_users=$(cut -d: -f1 /etc/passwd)
+
+for username in "$@"; do
+
+    # Skapa användare om den inte finns
+    if ! id "$username" >/dev/null 2>&1; then
+        useradd -m "$username"
     fi
 
-    # Hämta hemkatalog
-    home_dir=$(getent passwd "$username" | cut -d: -f6)
+    # Hemkatalog
+    home_dir="/home/$username"
 
-    # Kontrollera att hemkatalog hittades
-    if [ -z "$home_dir" ]; then
-        echo "Fel: Kunde inte hitta hemkatalog för $username"
-        continue
-    fi
+    # Skapa undermappar (EXAKTA namn!)
+    mkdir -p "$home_dir/Documents"
+    mkdir -p "$home_dir/Downloads"
+    mkdir -p "$home_dir/Work"
 
-    # Skapa undermappar
-    mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
-
-    # Sätt rättigheter på undermappar
+    # Rättigheter
     chmod 700 "$home_dir/Documents"
     chmod 700 "$home_dir/Downloads"
     chmod 700 "$home_dir/Work"
 
-    # Skapa welcome.txt
-    {
-        echo "Välkommen $username"
-        echo "$existing_users"
-    } > "$home_dir/welcome.txt"
+    # welcome.txt (EXAKT format viktigt)
+    echo "Välkommen $username" > "$home_dir/welcome.txt"
+    echo "$existing_users" >> "$home_dir/welcome.txt"
 
-    # Sätt rättigheter på welcome.txt
+    # Rättigheter på fil
     chmod 600 "$home_dir/welcome.txt"
 
-    # Sätt ägarskap på hela hemkatalogen
-    chown -R "$username:$(id -gn "$username")" "$home_dir"
+    # Ägarskap (kritisk fix!)
+    chown -R "$username" "$home_dir"
+
 done
