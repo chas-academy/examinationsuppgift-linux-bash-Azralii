@@ -5,37 +5,31 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Kontrollera att minst en användare skickats in
+if [ $# -eq 0 ]; then
+    exit 1
+fi
+
 # Skapa användare från argument
 for username in "$@"; do
-    # Skapa grupp om den inte finns
-    if ! getent group "$username" > /dev/null 2>&1; then
-        groupadd "$username"
-    fi
-
-    # Skapa användare om den inte finns
-    if ! id "$username" > /dev/null 2>&1; then
-        useradd -m -g "$username" "$username"
-    fi
+    useradd -m -U "$username" 2>/dev/null
 
     home_dir="/home/$username"
 
     # Skapa kataloger
-    mkdir -p "$home_dir/Documents"
-    mkdir -p "$home_dir/Downloads"
-    mkdir -p "$home_dir/Work"
+    mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
 
-    # Sätt ägarskap och rättigheter
+    # Sätt ägarskap
     chown -R "$username:$username" "$home_dir"
-    chmod 700 "$home_dir/Documents"
-    chmod 700 "$home_dir/Downloads"
-    chmod 700 "$home_dir/Work"
+
+    # Sätt rättigheter
+    chmod 700 "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
 
     # Skapa welcome.txt
-    {
-        echo "Välkommen $username"
-        awk -F: -v user="$username" '$1 != user { print $1 }' /etc/passwd
-    } > "$home_dir/welcome.txt"
+    echo "Välkommen $username" > "$home_dir/welcome.txt"
+    awk -F: -v current="$username" '$1 != current { print $1 }' /etc/passwd >> "$home_dir/welcome.txt"
 
+    # Sätt ägare och rättigheter på welcome.txt
     chown "$username:$username" "$home_dir/welcome.txt"
     chmod 600 "$home_dir/welcome.txt"
 done
