@@ -12,22 +12,26 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-# Loopa igenom alla användarnamn som skickats in
+# Loopa igenom alla användarnamn
 for username in "$@"; do
-    # Skapa användaren med hemkatalog om den inte redan finns
+    # Spara lista på befintliga användare innan ny användare skapas
+    existing_users=$(cut -d: -f1 /etc/passwd)
+
+    # Skapa användaren med hemkatalog om den inte finns
     if ! id "$username" >/dev/null 2>&1; then
         useradd -m "$username"
     fi
 
-    home_dir="/home/$username"
+    # Hämta användarens riktiga hemkatalog från systemet
+    home_dir=$(getent passwd "$username" | cut -d: -f6)
 
-    # Skapa katalogstruktur
+    # Skapa katalogerna
     mkdir -p "$home_dir/Documents" "$home_dir/Downloads" "$home_dir/Work"
 
     # Sätt ägarskap
     chown -R "$username:$username" "$home_dir"
 
-    # Sätt rättigheter så endast ägaren har åtkomst
+    # Sätt rättigheter
     chmod 700 "$home_dir/Documents"
     chmod 700 "$home_dir/Downloads"
     chmod 700 "$home_dir/Work"
@@ -35,12 +39,10 @@ for username in "$@"; do
     # Skapa welcome.txt
     {
         echo "Välkommen $username"
-        echo
-        echo "Andra användare i systemet:"
-        cut -d: -f1 /etc/passwd | grep -v "^$username$"
+        echo "$existing_users"
     } > "$home_dir/welcome.txt"
 
-    # Sätt rätt ägare på filen
+    # Sätt ägare och rättigheter på welcome.txt
     chown "$username:$username" "$home_dir/welcome.txt"
     chmod 600 "$home_dir/welcome.txt"
 done
