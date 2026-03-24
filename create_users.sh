@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Script som skapar användare, hemkatalog, mappar och welcome.txt
+# Skapar användare, hemkatalog, mappar och welcome.txt
 # Endast root får köra scriptet
 
 if [ "$EUID" -ne 0 ]; then
-    echo "Fel: endast root får köra scriptet."
+    echo "Fel: endast root får köra detta script."
     exit 1
 fi
 
