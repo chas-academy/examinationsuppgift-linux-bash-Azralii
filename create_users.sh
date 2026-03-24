@@ -8,30 +8,31 @@ fi
 
 for username in "$@"; do
 
-    # Lista befintliga användare
-    users=$(cut -d: -f1 /etc/passwd)
+    # Spara lista på befintliga användare
+    existing_users=$(cut -d: -f1 /etc/passwd)
 
-    # 🔥 VIKTIGT
-    sudo useradd -m "$username"
+    # 🔥 VIKTIGT: använd full path
+    /usr/sbin/useradd -m "$username"
 
-    home="/home/$username"
+    # Hämta hemkatalog från systemet (INTE hårdkoda)
+    home_dir=$(getent passwd "$username" | cut -d: -f6)
 
     # Skapa mappar
-    mkdir "$home/Documents"
-    mkdir "$home/Downloads"
-    mkdir "$home/Work"
+    mkdir -p "$home_dir/Documents"
+    mkdir -p "$home_dir/Downloads"
+    mkdir -p "$home_dir/Work"
 
-    # Skapa welcome.txt
-    echo "Välkommen $username" > "$home/welcome.txt"
-    echo "$users" >> "$home/welcome.txt"
+    # welcome.txt
+    echo "Välkommen $username" > "$home_dir/welcome.txt"
+    echo "$existing_users" >> "$home_dir/welcome.txt"
 
     # Sätt ägare
-    chown -R "$username:$username" "$home"
+    chown -R "$username:$username" "$home_dir"
 
     # Rättigheter
-    chmod 700 "$home/Documents"
-    chmod 700 "$home/Downloads"
-    chmod 700 "$home/Work"
-    chmod 600 "$home/welcome.txt"
+    chmod 700 "$home_dir/Documents"
+    chmod 700 "$home_dir/Downloads"
+    chmod 700 "$home_dir/Work"
+    chmod 600 "$home_dir/welcome.txt"
 
 done
