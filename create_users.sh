@@ -1,37 +1,48 @@
 #!/bin/bash
 
-# Kontrollera att scriptet körs som root
+set -euo pipefail
+
+# Root-kontroll
 if [ "$EUID" -ne 0 ]; then
-    echo "Fel: endast root får köra detta script."
-    exit 1
+  echo "Detta script måste köras som root."
+  exit 1
 fi
 
-# Loopa igenom alla användarnamn som skickas in
-for username in "$@"; do
-    # Spara användare som redan finns innan ny användare skapas
-    existing_users=$(cut -d: -f1 /etc/passwd)
+USERNAME="${1:-studentuser}"
 
-    # Skapa användaren med hemkatalog
-    useradd -m "$username"
+# Skapa användare om den inte inte redan finns
+if ! id "$USERNAME" >/dev/null 2>&1; then
+  useradd -m -s /bin/bash "$USERNAME"
+fi
 
-    # Standard hemkatalog
-    home_dir="/home/$username"
+HOME_DIR="/home/$USERNAME"
 
-    # Skapa mappar
-    mkdir -p "$home_dir/Documents"
-    mkdir -p "$home_dir/Downloads"
-    mkdir -p "$home_dir/Work"
+# Skapa undermappar
+mkdir -p "$HOME_DIR/documents" "$HOME_DIR/scripts" "$HOME_DIR/logs"
 
-    # Skapa welcome.txt
-    echo "Välkommen $username" > "$home_dir/welcome.txt"
-    echo "$existing_users" >> "$home_dir/welcome.txt"
+# Sätt ägare
+chown -R "$USERNAME:$USERNAME" "$HOME_DIR"
 
-    # Sätt ägare
-    chown -R "$username:$username" "$home_dir"
+# Rättigheter: endast ägare
+chmod 700 "$HOME_DIR"
+chmod 700 "$HOME_DIR/documents"
+chmod 700 "$HOME_DIR/scripts"
+chmod 700 "$HOME_DIR/logs"
 
-    # Sätt rättigheter
-    chmod 700 "$home_dir/Documents"
-    chmod 700 "$home_dir/Downloads"
-    chmod 700 "$home_dir/Work"
-    chmod 600 "$home_dir/welcome.txt"
-done
+# Skapa välkomstfil
+WELCOME_FILE="$HOME_DIR/welcome.txt"
+cat > "$WELCOME_FILE" <<EOF
+Välkommen $USERNAME!
+
+Din användare har skapats korrekt.
+Mappar som skapats:
+- documents
+- scripts
+- logs
+EOF
+
+# Sätt ägare och rättigheter på välkomstfil
+chown "$USERNAME:$USERNAME" "$WELCOME_FILE"
+chmod 600 "$WELCOME_FILE"
+
+echo "Klart: användaren $USERNAME är skapad med mappar och välkomstfil."
