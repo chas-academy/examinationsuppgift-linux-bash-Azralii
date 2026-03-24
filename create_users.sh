@@ -1,27 +1,28 @@
 #!/bin/bash
 
 if [ "$EUID" -ne 0 ]; then
-  echo "Run as root"
-  exit 1
+    echo "This script must be run as root"
+    exit 1
 fi
 
-USERNAME="$1"
-HOME_DIR="/home/$USERNAME"
+for username in "$@"; do
+    useradd -m "$username"
 
-useradd -m "$USERNAME"
+    home_dir="/home/$username"
 
-mkdir -p "$HOME_DIR/documents"
-mkdir -p "$HOME_DIR/scripts"
-mkdir -p "$HOME_DIR/logs"
+    mkdir -p "$home_dir/documents"
+    mkdir -p "$home_dir/scripts"
+    mkdir -p "$home_dir/logs"
 
-chown -R "$USERNAME:$USERNAME" "$HOME_DIR"
+    chown -R "$username:$username" "$home_dir"
 
-chmod 700 "$HOME_DIR"
-chmod 700 "$HOME_DIR/documents"
-chmod 700 "$HOME_DIR/scripts"
-chmod 700 "$HOME_DIR/logs"
+    chmod 700 "$home_dir"
+    chmod 700 "$home_dir/documents"
+    chmod 700 "$home_dir/scripts"
+    chmod 700 "$home_dir/logs"
 
-echo "Welcome $USERNAME" > "$HOME_DIR/welcome.txt"
+    echo "Welcome $username" > "$home_dir/welcome.txt"
 
-chown "$USERNAME:$USERNAME" "$HOME_DIR/welcome.txt"
-chmod 600 "$HOME_DIR/welcome.txt"
+    chown "$username:$username" "$home_dir/welcome.txt"
+    chmod 600 "$home_dir/welcome.txt"
+done
