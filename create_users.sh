@@ -1,31 +1,38 @@
 #!/bin/bash
 
-# Skapar användare, hemkatalog, mappar och welcome.txt
-# Endast root får köra scriptet
-
+# Kontrollera root
 if [ "$EUID" -ne 0 ]; then
     echo "Fel: endast root får köra detta script."
     exit 1
 fi
 
 for username in "$@"; do
-    existing_users=$(cut -d: -f1 /etc/passwd)
 
-    useradd -m "$username"
+    # Lista användare innan skapande
+    users=$(cut -d: -f1 /etc/passwd)
 
-    home_dir="/home/$username"
+    # SKAPA ANVÄNDARE (VIKTIG RAD)
+    useradd -m -s /bin/bash "$username"
 
-    mkdir -p "$home_dir/Documents"
-    mkdir -p "$home_dir/Downloads"
-    mkdir -p "$home_dir/Work"
+    # Hemkatalog
+    home="/home/$username"
 
-    echo "Välkommen $username" > "$home_dir/welcome.txt"
-    echo "$existing_users" >> "$home_dir/welcome.txt"
+    # Skapa mappar
+    mkdir -p "$home/Documents"
+    mkdir -p "$home/Downloads"
+    mkdir -p "$home/Work"
 
-    chown -R "$username:$username" "$home_dir"
+    # Welcome-fil
+    echo "Välkommen $username" > "$home/welcome.txt"
+    echo "$users" >> "$home/welcome.txt"
 
-    chmod 700 "$home_dir/Documents"
-    chmod 700 "$home_dir/Downloads"
-    chmod 700 "$home_dir/Work"
-    chmod 600 "$home_dir/welcome.txt"
+    # Ägare
+    chown -R "$username:$username" "$home"
+
+    # Rättigheter
+    chmod 700 "$home/Documents"
+    chmod 700 "$home/Downloads"
+    chmod 700 "$home/Work"
+    chmod 600 "$home/welcome.txt"
+
 done
