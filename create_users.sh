@@ -1,36 +1,33 @@
-
 #!/bin/bash
 
-set -euo pipefail
-
+# Kontrollera root
 if [ "$EUID" -ne 0 ]; then
-  echo "Du måste köra scriptet som root."
+  echo "Run as root"
   exit 1
 fi
 
 USERNAME="student"
-HOME_DIR="/home/$USERNAME"
 
-if ! id "$USERNAME" >/dev/null 2>&1; then
-  useradd -m -s /bin/bash "$USERNAME"
-fi
+# Skapa användare
+useradd -m "$USERNAME"
 
-mkdir -p "$HOME_DIR/documents"
-mkdir -p "$HOME_DIR/scripts"
-mkdir -p "$HOME_DIR/logs"
+# Skapa mappar
+mkdir /home/$USERNAME/documents
+mkdir /home/$USERNAME/scripts
+mkdir /home/$USERNAME/logs
 
-chown -R "$USERNAME:$USERNAME" "$HOME_DIR"
+# Sätt rättigheter (endast ägare)
+chmod 700 /home/$USERNAME
+chmod 700 /home/$USERNAME/documents
+chmod 700 /home/$USERNAME/scripts
+chmod 700 /home/$USERNAME/logs
 
-chmod 700 "$HOME_DIR"
-chmod 700 "$HOME_DIR/documents"
-chmod 700 "$HOME_DIR/scripts"
-chmod 700 "$HOME_DIR/logs"
+# Sätt ägare
+chown -R $USERNAME:$USERNAME /home/$USERNAME
 
-cat > "$HOME_DIR/welcome.txt" <<EOF
-Welcome $USERNAME
-EOF
+# Skapa välkomstfil
+echo "Welcome $USERNAME" > /home/$USERNAME/welcome.txt
 
-chown "$USERNAME:$USERNAME" "$HOME_DIR/welcome.txt"
-chmod 600 "$HOME_DIR/welcome.txt"
-
-echo "Klart"
+# Rättigheter på fil
+chmod 600 /home/$USERNAME/welcome.txt
+chown $USERNAME:$USERNAME /home/$USERNAME/welcome.txt
