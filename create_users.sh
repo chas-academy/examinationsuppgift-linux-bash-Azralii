@@ -6,23 +6,23 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Skapa användare från argumenten
+# Loopa igenom alla användarnamn som skickas in
 for username in "$@"; do
-    # Spara lista på användare som redan finns
+    # Spara användare som redan finns innan ny användare skapas
     existing_users=$(cut -d: -f1 /etc/passwd)
 
     # Skapa användaren med hemkatalog
     useradd -m "$username"
 
-    # Använd standard hemkatalog
+    # Standard hemkatalog
     home_dir="/home/$username"
 
-    # Skapa undermappar
+    # Skapa mappar
     mkdir -p "$home_dir/Documents"
     mkdir -p "$home_dir/Downloads"
     mkdir -p "$home_dir/Work"
 
-    # Skapa välkomstfil
+    # Skapa welcome.txt
     echo "Välkommen $username" > "$home_dir/welcome.txt"
     echo "$existing_users" >> "$home_dir/welcome.txt"
 
@@ -34,3 +34,4 @@ for username in "$@"; do
     chmod 700 "$home_dir/Downloads"
     chmod 700 "$home_dir/Work"
     chmod 600 "$home_dir/welcome.txt"
+done
