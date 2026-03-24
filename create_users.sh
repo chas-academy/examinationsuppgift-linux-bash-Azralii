@@ -8,11 +8,11 @@ fi
 
 for username in "$@"; do
 
-    # Lista användare innan skapande
+    # Spara befintliga användare
     users=$(cut -d: -f1 /etc/passwd)
 
-    # SKAPA ANVÄNDARE (VIKTIG RAD)
-    useradd -m -s /bin/bash "$username"
+    # 🔴 VIKTIGT: full path till useradd
+    /usr/sbin/useradd -m "$username"
 
     # Hemkatalog
     home="/home/$username"
