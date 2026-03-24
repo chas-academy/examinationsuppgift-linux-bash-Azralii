@@ -8,25 +8,24 @@ fi
 
 for username in "$@"; do
 
-    # Spara befintliga användare
+    # Lista befintliga användare
     users=$(cut -d: -f1 /etc/passwd)
 
-    # 🔴 VIKTIGT: full path till useradd
-    /usr/sbin/useradd -m "$username"
+    # 🔥 VIKTIGT
+    sudo useradd -m "$username"
 
-    # Hemkatalog
     home="/home/$username"
 
     # Skapa mappar
-    mkdir -p "$home/Documents"
-    mkdir -p "$home/Downloads"
-    mkdir -p "$home/Work"
+    mkdir "$home/Documents"
+    mkdir "$home/Downloads"
+    mkdir "$home/Work"
 
-    # Welcome-fil
+    # Skapa welcome.txt
     echo "Välkommen $username" > "$home/welcome.txt"
     echo "$users" >> "$home/welcome.txt"
 
-    # Ägare
+    # Sätt ägare
     chown -R "$username:$username" "$home"
 
     # Rättigheter
