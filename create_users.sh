@@ -6,7 +6,7 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Skapa alla användare som skickas in som argument
+# Skapa användare från argument
 for username in "$@"; do
     useradd -m "$username" 2>/dev/null
 
@@ -26,14 +26,12 @@ for username in "$@"; do
     chmod 700 "$home_dir/Work"
 
     # Skapa welcome.txt
-    {
-        echo "Välkommen $username"
-        for other_user in "$@"; do
-            echo "$other_user"
-        done
-    } > "$home_dir/welcome.txt"
+    echo "Välkommen $username" > "$home_dir/welcome.txt"
 
-    # Sätt ägare och rättigheter på welcome.txt
+    for other_user in "$@"; do
+        echo "$other_user" >> "$home_dir/welcome.txt"
+    done
+
     chown "$username:$username" "$home_dir/welcome.txt"
     chmod 600 "$home_dir/welcome.txt"
 done
