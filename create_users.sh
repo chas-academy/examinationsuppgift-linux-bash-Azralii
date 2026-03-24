@@ -1,33 +1,27 @@
 #!/bin/bash
 
-# Kontrollera root
 if [ "$EUID" -ne 0 ]; then
   echo "Run as root"
   exit 1
 fi
 
-USERNAME="student"
+USERNAME="$1"
+HOME_DIR="/home/$USERNAME"
 
-# Skapa användare
 useradd -m "$USERNAME"
 
-# Skapa mappar
-mkdir /home/$USERNAME/documents
-mkdir /home/$USERNAME/scripts
-mkdir /home/$USERNAME/logs
+mkdir -p "$HOME_DIR/documents"
+mkdir -p "$HOME_DIR/scripts"
+mkdir -p "$HOME_DIR/logs"
 
-# Sätt rättigheter (endast ägare)
-chmod 700 /home/$USERNAME
-chmod 700 /home/$USERNAME/documents
-chmod 700 /home/$USERNAME/scripts
-chmod 700 /home/$USERNAME/logs
+chown -R "$USERNAME:$USERNAME" "$HOME_DIR"
 
-# Sätt ägare
-chown -R $USERNAME:$USERNAME /home/$USERNAME
+chmod 700 "$HOME_DIR"
+chmod 700 "$HOME_DIR/documents"
+chmod 700 "$HOME_DIR/scripts"
+chmod 700 "$HOME_DIR/logs"
 
-# Skapa välkomstfil
-echo "Welcome $USERNAME" > /home/$USERNAME/welcome.txt
+echo "Welcome $USERNAME" > "$HOME_DIR/welcome.txt"
 
-# Rättigheter på fil
-chmod 600 /home/$USERNAME/welcome.txt
-chown $USERNAME:$USERNAME /home/$USERNAME/welcome.txt
+chown "$USERNAME:$USERNAME" "$HOME_DIR/welcome.txt"
+chmod 600 "$HOME_DIR/welcome.txt"
